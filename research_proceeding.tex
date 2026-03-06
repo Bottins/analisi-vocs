@@ -1,0 +1,48 @@
+﻿\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\title{A Reproducible PTR-MS Pipeline for VOC Time-Series Analysis}
+\author{Open-Source Research Note}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We describe an open-source data-analysis pipeline for volatile organic compound (VOC) signals acquired by PTR-MS instrumentation. The pipeline formalizes run-aware segmentation, robust aggregation, blank subtraction, and multivariate exploratory analysis. The objective is reproducible extraction of treatment-level differences from high-frequency time-series measurements.
+\end{abstract}
+
+\section{Problem Statement}
+Let $\mathcal{T}=\{\mathrm{H0},\mathrm{H1},\mathrm{Blank}\}$ denote experimental groups and let each run $r\in\mathcal{R}$ produce a set of room-level files $x_{t,r,j}(\tau,m)$, where $\tau$ is acquisition time and $m$ is mass channel (e.g., $m/z$ proxy). We seek robust group-level summaries $S_t(m,k)$ over block index $k$, while controlling transients and anomalies.
+
+\section{Formalization}
+For each file, define temporal blocks $B_k$ via gap-based segmentation. For each block and mass channel, we compute a trimmed robust statistic:
+\[
+\tilde{x}_{t,r,j,k}(m)=\mathrm{median}\left(\mathrm{trim}_{\alpha}(x_{t,r,j}(\tau,m),\tau\in B_k)\right),
+\]
+with $\alpha\in(0,0.5)$ (default $0.2$). Replicate aggregation is
+\[
+S_t(m,k)=\mathrm{Agg}\left(\tilde{x}_{t,r,j,k}(m): j\in\mathcal{J}_{t,r}\right),
+\]
+where $\mathrm{Agg}$ is median/mean with uncertainty interval. Blank-corrected signal is
+\[
+Y_t(m,k)=S_t(m,k)-S_{\mathrm{Blank}}(m,k).
+\]
+Pairwise treatment contrasts can be summarized by effect metrics
+\[
+\Delta_{a,b}(m)=\mathrm{Metric}(Y_a(m,\cdot),Y_b(m,\cdot)).
+\]
+For structure discovery, PCA is applied to matrix $\mathbf{Y}\in\mathbb{R}^{n\times p}$ after scaling/imputation.
+
+\section{Research Contribution}
+The pipeline unifies practical preprocessing constraints (run schedules, acclimation windows, transition exclusion) with robust statistics and interpretable multivariate analysis. It is suitable for reproducible exploratory research and hypothesis generation in chemical sensing studies.
+
+\begin{thebibliography}{9}
+\bibitem{blake2009} R. S. Blake et al., ``Proton-Transfer Reaction Mass Spectrometry,'' \emph{Chemical Reviews}, 2009.
+\bibitem{lindinger1998} W. Lindinger, A. Hansel, A. Jordan, ``On-line monitoring of VOCs by PTR-MS,'' \emph{Int. J. Mass Spectrom.}, 1998.
+\bibitem{huber2009} P. J. Huber, E. M. Ronchetti, \emph{Robust Statistics}, Wiley, 2009.
+\bibitem{jolliffe2002} I. T. Jolliffe, \emph{Principal Component Analysis}, Springer, 2002.
+\bibitem{benjamini1995} Y. Benjamini, Y. Hochberg, ``Controlling the False Discovery Rate,'' \emph{JRSS B}, 1995.
+\end{thebibliography}
+
+\end{document}
