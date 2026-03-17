@@ -150,12 +150,12 @@ Raw data files and large datasets have been removed from this repository for pri
 
 If using this pipeline in academic work, please cite:
 ```
-Bottini, A. (2026). VOC Analysis Pipeline for PTR-MS Data.
+Bottino, A. (2026). VOC Analysis Pipeline for PTR-MS Data.
 GitHub: https://github.com/Bottins/analisi-vocs
 ```
 
 ---
 
-**Author**: Alessandro Bottini
+**Author**: Alessandro Bottino
 **Last Updated**: March 2026
 **Repository**: [github.com/Bottins/analisi-vocs](https://github.com/Bottins/analisi-vocs)
