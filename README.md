@@ -1,105 +1,161 @@
-﻿# Analisi VOCs (PTR-MS)
+# VOC Analysis Pipeline for PTR-MS Data
 
-Pipeline standalone per analisi VOC da dati PTR-MS gia preprocessati: split temporale, mediane per blocco, rimozione anomalie, aggregazione repliche, sottrazione blank, confronto tesi e PCA.
+## Overview
 
-## Struttura progetto
+A standalone analytical pipeline for processing Volatile Organic Compound (VOC) data from Proton Transfer Reaction Mass Spectrometry (PTR-MS) instruments. This system performs comprehensive time-series analysis including temporal segmentation, anomaly detection, blank subtraction, replicate aggregation, and multivariate statistical analysis (PCA) for experimental VOC datasets.
 
-```text
-Analisi VOCs/
-  voc_analysis_pipeline.py
-  ptrms_*.py
-  H0/
-    Run2/
-    Run4/
-    Run5/
-    Run6/
-  H1/
-    Run2/
-    Run4/
-    Run5/
-    Run6/
-  Blank/
-  config/
-    run_schedule.template.csv
-  output/
+## Key Features
+
+- **Automated Time-Series Processing**: Temporal splitting with configurable acclimation and transition exclusion windows
+- **Statistical Preprocessing**: Block-wise median calculation and robust anomaly removal
+- **Experimental Design Support**: Multi-condition (thesis) comparison with replicate aggregation
+- **Blank Correction**: Systematic blank subtraction for chemical background removal
+- **Multivariate Analysis**: Principal Component Analysis (PCA) for VOC pattern recognition
+- **Flexible Configuration**: External schedule files for reproducible experimental workflows
+
+## Project Structure
+
+```
+analisi-vocs/
+├── voc_analysis_pipeline.py    # Main pipeline orchestrator
+├── ptrms_*.py                   # Modular PTR-MS processing functions
+├── H0/                          # Condition/thesis H0 data
+│   ├── Run2/
+│   ├── Run4/
+│   ├── Run5/
+│   └── Run6/
+├── H1/                          # Condition/thesis H1 data
+│   └── [Run folders]
+├── Blank/                       # Blank measurements
+├── config/
+│   ├── run_schedule.template.csv    # Experiment timing configuration
+│   └── composti da monitorare.xlsx  # Optional: Target m/z list
+└── output/
+    ├── 01_comparison_raw_median/
+    ├── 02_anomaly_removal/
+    ├── 03_aggregation/
+    ├── 04_blank_removal/
+    ├── 05_final_comparison/
+    ├── 06_pca_analysis/
+    └── comparison_metrics.xlsx
 ```
 
-## Come caricare i VOC PTR-MS
+## Technical Stack
 
-### 1) Dati per tesi (generalizzato)
+- **Data Processing**: Python, Pandas, NumPy
+- **Statistical Analysis**: Scikit-learn (PCA), SciPy
+- **Visualization**: Matplotlib, Seaborn
+- **Input Formats**: CSV/TXT (PTR-MS exports), Excel (configuration)
 
-Carica i file esportati dal tuo flusso PTR-MS in cartelle separate per tesi:
-
-- `H0/`
-- `H1/`
-- `Blank/`
-
-Ogni tesi puo contenere:
-
-- file direttamente nella cartella, oppure
-- sottocartelle per run (`Run2`, `Run4`, ecc.)
-
-Formati supportati: `.txt` o `.csv` (esportazioni PTR-MS gia preprocessate, ad esempio `stanza_01.h5_export.txt`).
-
-Naming consigliato:
-
-- `stanza_01.h5_export.txt`
-- `stanza_02.h5_export.txt`
-
-### 2) File configurazione orari camere / schedule run
-
-La pipeline supporta un file opzionale in:
-
-- `config/run_schedule.xlsx` (default)
-- oppure `config/run_schedule.csv`
-
-Colonne consigliate (alias accettati nel codice):
-
-- `run_id`
-- `start_datetime` (inizio reale run)
-- `split_hours` (offset ore per split H0/H1 -> H2/H3)
-- `acclim_hours` (durata fase acclimatazione)
-- `transition_exclude_hours` (finestra esclusione attorno al cambio)
-
-Questo rende la pipeline riusabile anche fuori dal tuo caso specifico.
-Se il file manca, vengono usati i default hardcoded in `voc_analysis_pipeline.py`.
-
-Template pronto: `config/run_schedule.template.csv`.
-
-### 3) File composti monitorati (opzionale)
-
-Puoi fornire `composti da monitorare.xlsx` (prima colonna = m/z) per limitare i plot a masse di interesse.
-Se assente, la pipeline usa tutte le masse disponibili.
-
-## Setup
+## Installation
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Esecuzione
+## Data Preparation
+
+### 1. PTR-MS Data Organization
+
+Place preprocessed PTR-MS exports in thesis-specific folders:
+
+- `H0/` - Control or baseline condition
+- `H1/` - Treatment or experimental condition
+- `Blank/` - Blank measurements for background subtraction
+
+**Supported Formats**: `.txt` or `.csv` (e.g., `chamber_01.h5_export.txt`)
+
+**Recommended Naming**:
+```
+chamber_01.h5_export.txt
+chamber_02.h5_export.txt
+```
+
+Data can be organized as:
+- Flat structure (files directly in thesis folders)
+- Nested structure (files in `Run2`, `Run4`, etc. subfolders)
+
+### 2. Experimental Schedule Configuration (Optional)
+
+Provide timing information via:
+- `config/run_schedule.xlsx` (default)
+- `config/run_schedule.csv`
+
+**Required Columns**:
+
+| Column | Description |
+|--------|-------------|
+| `run_id` | Unique run identifier |
+| `start_datetime` | Run start timestamp |
+| `split_hours` | Offset for temporal phase splitting (H0/H1 → H2/H3) |
+| `acclim_hours` | Acclimation period duration |
+| `transition_exclude_hours` | Exclusion window around phase transitions |
+
+If absent, hardcoded defaults in `voc_analysis_pipeline.py` will be used.
+
+**Template**: `config/run_schedule.template.csv`
+
+### 3. Target Compound List (Optional)
+
+Specify m/z values of interest in:
+- `composti da monitorare.xlsx` (first column = m/z)
+
+If not provided, all detected masses will be analyzed.
+
+## Usage
 
 ```bash
 python voc_analysis_pipeline.py
 ```
 
-## Output principali
+The pipeline executes sequentially:
+1. **Temporal Splitting** → Extract acclimation and experimental phases
+2. **Block Median Calculation** → Reduce noise via temporal aggregation
+3. **Anomaly Removal** → Statistical outlier detection and filtering
+4. **Replicate Aggregation** → Combine technical/biological replicates
+5. **Blank Subtraction** → Remove chemical background
+6. **Condition Comparison** → Statistical testing and visualization
+7. **PCA Analysis** → Dimensionality reduction and pattern discovery
 
-- `output/01_comparison_raw_median/`
-- `output/02_anomaly_removal/`
-- `output/03_aggregation/`
-- `output/04_blank_removal/`
-- `output/05_final_comparison/`
-- `output/06_pca_analysis/`
-- `output/comparison_metrics.xlsx`
+## Output Structure
 
-## Nota portfolio/privacy
+| Directory | Contents |
+|-----------|----------|
+| `01_comparison_raw_median/` | Raw vs. median-filtered comparisons |
+| `02_anomaly_removal/` | Anomaly detection results and plots |
+| `03_aggregation/` | Replicate-aggregated time series |
+| `04_blank_removal/` | Blank-subtracted VOC profiles |
+| `05_final_comparison/` | Thesis comparison plots and statistics |
+| `06_pca_analysis/` | PCA loadings, scores, and biplots |
+| `comparison_metrics.xlsx` | Summary statistics and effect sizes |
 
-I file grezzi e i dataset pesanti sono stati rimossi dal repository.
-Questa repo contiene codice, struttura cartelle e template di caricamento.
+## Use Cases
+
+- **Chemical Ecology**: VOC profiling of plant-insect interactions
+- **Environmental Monitoring**: Real-time air quality analysis
+- **Food Science**: Aroma compound characterization
+- **Clinical Research**: Breath analysis for disease biomarkers
+
 ## Research Profile
 
-- Research keywords: PTR-MS, VOC time series, anomaly removal, blank subtraction, PCA, reproducible analytics.
-- Positioning: applied research project for experimental chemical sensing data analysis.
-- Open-source status: this repository is open source and intended for reproducible research and education.
+- **Keywords**: PTR-MS, VOC time series, anomaly removal, blank subtraction, PCA, reproducible analytics, chemical sensing
+- **Domain**: Applied analytical chemistry and experimental data science
+- **License**: Open-source for reproducible research and education
 
+## Notes
+
+Raw data files and large datasets have been removed from this repository for privacy and size constraints. This repository contains production-ready code, configuration templates, and directory structure for immediate deployment.
+
+## Citation
+
+If using this pipeline in academic work, please cite:
+```
+Bottini, A. (2026). VOC Analysis Pipeline for PTR-MS Data.
+GitHub: https://github.com/Bottins/analisi-vocs
+```
+
+---
+
+**Author**: Alessandro Bottini
+**Last Updated**: March 2026
+**Repository**: [github.com/Bottins/analisi-vocs](https://github.com/Bottins/analisi-vocs)
