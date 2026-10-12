@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# ---------------------------------------------------------------
+# Data: all contents ignored, empty folders kept via .gitkeep
+# ---------------------------------------------------------------
+Blank/**
+H0/**
+H1/**
+output/**
+!Blank/**/
+!H0/**/
+!H1/**/
+!output/**/
+!Blank/**/.gitkeep
+!H0/**/.gitkeep
+!H1/**/.gitkeep
+!output/**/.gitkeep
+
+# Config: keep only the template
+config/*
+!config/run_schedule.template.csv
+!config/.gitkeep
